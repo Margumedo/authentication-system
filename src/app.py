@@ -11,6 +11,7 @@ from api.models import db
 from api.routes import api
 from api.admin import setup_admin
 from api.commands import setup_commands
+from flask_jwt_extended import JWTManager           # importamos JWTManager de la liberia Flask
 
 #from models import Person
 
@@ -27,6 +28,10 @@ else:
     app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:////tmp/test.db"
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config['JWT_SECRET_KEY']=os.getenv('FLASK_APP_KEY')         #configurando mi palabra secreta
+jwt=JWTManager(app) 
+
 MIGRATE = Migrate(app, db, compare_type = True)
 db.init_app(app)
 

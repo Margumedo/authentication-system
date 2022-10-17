@@ -2,52 +2,80 @@ const getState = ({ getStore, getActions, setStore }) => {
 	return {
 		store: {
 			message: null,
-			demo: [
-				{
-					title: "FIRST",
-					background: "white",
-					initial: "white"
-				},
-				{
-					title: "SECOND",
-					background: "white",
-					initial: "white"
-				}
-			]
+			token: localStorage.getItem("token") || "",
+			users: [],
 		},
-		actions: {
-			// Use getActions to call a function within a fuction
-			exampleFunction: () => {
-				getActions().changeColor(0, "green");
-			},
+		actions: {											// las funciones en los actions se declaran como objetos
+			userRegister : async (user)=>{					// recibo user porque es el objeto que se esta tratando de registrar en el inicio
+				try {
+					let response = await fetch(`http://127.0.0.1:3001/api/user/`,{            // hago un fetch a mi api
+						method: "POST",
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(user),	  								    // en el cuerpo de la solicitud le paso el objeto que contine los datos a registrar (email, password)
+					});	
+					if (response.ok){
+						return true;
+					} 
+					return false; 
 
-			getMessage: async () => {
-				try{
-					// fetching data from the backend
-					const resp = await fetch(process.env.BACKEND_URL + "/api/hello")
-					const data = await resp.json()
-					setStore({ message: data.message })
-					// don't forget to return something, that is how the async resolves
-					return data;
-				}catch(error){
-					console.log("Error loading message from backend", error)
+				} catch (error) {
+					console.log(`Error:${error}`);
 				}
 			},
-			changeColor: (index, color) => {
-				//get the store
-				const store = getStore();
+			
+			userLogin: async(user)=>{
+				try {
+					let response = await fetch(`http://127.0.0.1:3001/api/login/`,{
+						method: 'POST',
+						headers: {
+							'Content-Type':'application/json',	
+					},
+					body: JSON.stringify(user),
+			 	});
+				if (response.ok){
+					let data = await response.json();
+					setStore({token: data.token})				      // guardo en el store el data.token porque data es un objeto que trae token 
+					window.localStorage.setItem("token", data.token)
+					console.log(data);
+					return true;
+				}else{
+					console.log('Todo mal con esto');
+					return false;
+				}
+					
+				} catch (error) {	
+					console.log(`Error: ${error}`)
+				}
+			},
 
-				//we have to loop the entire demo array to look for the respective index
-				//and change its color
-				const demo = store.demo.map((elm, i) => {
-					if (i === index) elm.background = color;
-					return elm;
-				});
+			logout: ()=>{
+				localStorage.removeItem('token');  						//elimino a el token de localstorage
+				setStore({token: ""});								   //configuro el token con vacio
+			},
 
-				//reset the global store
-				setStore({ demo: demo });
-			}
-		}
+			handleUSer : async () => {
+				let store= getStore();
+				try {
+					let response = await fetch("http://127.0.0.1:3001/api/user/", {
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `Bearer ${store.token}`
+						}
+					});
+					if (response.ok) {
+						let data = await response.json();
+						setStore({users: data});
+						console.log("desde el useEffect");
+					}
+		
+				} catch (error) {
+					console.log("Error:" + error)
+				}
+			},
+
+		}	
 	};
 };
 
